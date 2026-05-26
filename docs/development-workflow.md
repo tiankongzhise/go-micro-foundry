@@ -9,6 +9,45 @@
 - 项目采用单仓库目录模式，不为每个微服务维护长期开发分支。
 - 微服务代码放在 `services/<service>` 下，公共代码按稳定性放入 `internal` 或 `pkg`。
 - 功能开发必须小步推进，避免 feature 分支长期偏离 `main`。
+- 涉及微服务实现、接口、配置、UI、部署或联调的开发，必须先完整阅读历史设计文档归档，再进入预开发规划或编码。
+
+## 项目上下文基线
+
+历史完整设计文档已经归档到专用归档仓库：
+
+```text
+git@github.com:tiankongzhise/go-micro-foundry-archive.git archive/feature/origin-docs@74e5076bc9373b5502cf9bf1152b6b0be7aa3781
+```
+
+开发人员在开始涉及微服务能力的 feature 前，必须完整阅读该归档中的以下文档，并以这些文档作为项目上下文基线：
+
+1. `docs/architecture.md`
+2. `docs/api-conventions.md`
+3. `docs/ui-conventions.md`
+4. `docs/config-conventions.md`
+5. `docs/config-center.md`
+6. `docs/service-registry.md`
+7. `docs/api-gateway.md`
+8. `docs/auth-service.md`
+9. `docs/tracing-service.md`
+10. `docs/deployment.md`
+11. `docs/roadmap.md`
+
+阅读要求：
+
+- 预开发规划文档必须写明所依据的 `origin-docs` 归档分支和归档 HEAD。
+- 如果当前 feature 需要调整历史设计，必须在规划文档中明确说明调整点、原因和影响范围。
+- 禁止只根据当前仓库 README 或服务占位目录直接编码；当前仓库可能只保留基线代码，完整项目设计以归档文档为准。
+- 本地可以临时添加 `archive` 远端读取归档文档，但读取或归档完成后必须移除该远端，不得长期保留与归档仓库的本地关联。
+
+临时读取归档文档示例：
+
+```bash
+git remote add archive git@github.com:tiankongzhise/go-micro-foundry-archive.git
+git fetch archive archive/feature/origin-docs
+git show FETCH_HEAD:docs/architecture.md
+git remote remove archive
+```
 
 ## 分支模型
 
@@ -24,9 +63,26 @@ git switch -c feature/<feature-name>
 
 - feature 分支使用 `feature/<feature-name>`。
 - 服务子分支使用 `feature/<feature-name>/<service-name>`。
-- 归档分支使用 `archive/feature/<feature-name>`，且只保存在专用归档仓库 `git@github.com:tiankongzhise/go-micro-foundry-archive.git` 中。
+- 归档分支使用 `archive/feature/<feature-name>`，最终只保存在专用归档仓库 `git@github.com:tiankongzhise/go-micro-foundry-archive.git` 中。
 - `<feature-name>` 使用小写英文、数字和连字符，例如 `feature/bootstrap-config-center`。
 - `<service-name>` 必须和服务目录名一致，例如 `auth-service`。
+
+## 预开发规划阶段
+
+当一个 feature 涉及多个微服务、公共基础包或多人并行开发时，必须先在 feature 集成分支完成预开发规划，再创建服务子分支。
+
+预开发规划必须至少明确：
+
+- 已完整阅读的 `origin-docs` 归档版本和参考文档清单。
+- feature 的目标、非目标、影响范围和验收方式。
+- 各微服务在基础契约、核心能力、联调准备和联调验收阶段需要达到的进度。
+- 服务子分支拆分方式、负责人或协作团队、依赖顺序和合并顺序。
+- API 契约、配置项、错误码、日志字段、请求 ID 和 Trace ID 的统一约定。
+- 联调用例、测试数据、运行说明和未完成事项登记方式。
+
+预开发规划完成后，必须在 feature 分支提交规划 commit。服务子分支必须从该规划 commit 之后的 feature HEAD 创建，避免各团队基于不一致的目标开始开发。
+
+微服务阶段规划模板见 [microservice-development-plan.md](microservice-development-plan.md)。
 
 ## 服务子分支
 
@@ -60,6 +116,8 @@ feature 完成后必须满足以下条件：
 - 文档、配置示例和迁移说明已同步更新。
 - 本地测试、构建或人工验证已完成并记录在 PR 或 commit 中。
 - feature 分支已同步最新 `main`，并解决冲突。
+- 联调已通过，或该 feature 只有文档/流程变更且已经完成对应人工验收。
+- 已按归档流程迁出归档分支、推送专用归档仓库，并在 [archive-map.md](archive-map.md) 中记录开发分支与归档分支的对应关系。
 
 feature 合入 `main` 时使用 squash：
 
@@ -80,18 +138,37 @@ CI 可使用以下正则检查 `Archive-Ref`：
 
 ## feature 归档
 
-feature squash 合入 `main` 前，必须先把 feature 分支归档到专用归档仓库，再把归档 HEAD SHA 写入 squash commit 的 `Archive-Ref`：
+feature squash 合入 `main` 前，必须先把已通过联调或人工验收的 feature 迁出为临时归档分支，再推送到专用归档仓库。归档完成后，必须回到 feature 分支更新归档映射文档并提交归档记录 commit。
 
 ```bash
+git switch feature/<feature-name>
+git switch -c archive/feature/<feature-name>
 git remote add archive git@github.com:tiankongzhise/go-micro-foundry-archive.git
-git push archive feature/<feature-name>:archive/feature/<feature-name>
+git push archive archive/feature/<feature-name>:archive/feature/<feature-name>
 git ls-remote --heads archive archive/feature/<feature-name>
-git push origin --delete feature/<feature-name>
+```
+
+根据 `git ls-remote` 返回的 40 位 SHA 生成合入 `main` 需要的归档字段：
+
+```text
+Archive-Ref: git@github.com:tiankongzhise/go-micro-foundry-archive.git archive/feature/<feature-name>@<40位HEAD_SHA>
+```
+
+然后回到 feature 分支，更新 [archive-map.md](archive-map.md)，说明开发分支、归档分支、归档 HEAD、归档字段和必要的归档过程。该更新必须单独提交一次 commit，commit 信息应详述归档过程并包含归档字段。
+
+```bash
+git switch feature/<feature-name>
+git add docs/archive-map.md
+git commit
+git branch -d archive/feature/<feature-name>
+git remote remove archive
 ```
 
 归档约束：
 
-- `archive/feature/<feature-name>` 只用于追溯历史，必须位于专用归档仓库。
+- 本地 `archive/feature/<feature-name>` 只是迁出归档时使用的临时分支，归档和记录完成后必须删除。
+- 本地仓库不得长期保留 `archive` 远端；归档完成后必须执行 `git remote remove archive`，解除本地与专用归档仓库的关联。
+- `archive/feature/<feature-name>` 只用于追溯历史，最终必须位于专用归档仓库。
 - 主仓库 `git@github.com:tiankongzhise/go-micro-foundry.git` 不保留 `archive/feature/*` 分支。
 - 归档分支不可更改。
 - 禁止向归档分支继续提交。
