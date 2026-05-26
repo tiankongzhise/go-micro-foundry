@@ -24,7 +24,7 @@ git switch -c feature/<feature-name>
 
 - feature 分支使用 `feature/<feature-name>`。
 - 服务子分支使用 `feature/<feature-name>/<service-name>`。
-- 归档分支使用 `archive/feature/<feature-name>`。
+- 归档分支使用 `archive/feature/<feature-name>`，且只保存在专用归档仓库 `git@github.com:tiankongzhise/go-micro-foundry-archive.git` 中。
 - `<feature-name>` 使用小写英文、数字和连字符，例如 `feature/bootstrap-config-center`。
 - `<service-name>` 必须和服务目录名一致，例如 `auth-service`。
 
@@ -65,33 +65,47 @@ feature 合入 `main` 时使用 squash：
 
 - `main` 保持一个 feature 一个聚合提交。
 - squash commit 使用中文说明功能目标、关键技术变化、影响范围和验证方式。
-- feature 的详细开发过程不进入 `main` 历史，而是保留在归档分支。
+- feature 的详细开发过程不进入 `main` 历史，而是保留在专用归档仓库的归档分支。
+- squash commit 必须在提交信息末尾的 trailer 区域包含且只包含一个 `Archive-Ref` 字段，格式如下：
+
+```text
+Archive-Ref: git@github.com:tiankongzhise/go-micro-foundry-archive.git archive/feature/<feature-name>@<40位HEAD_SHA>
+```
+
+CI 可使用以下正则检查 `Archive-Ref`：
+
+```text
+^Archive-Ref: git@github\.com:tiankongzhise/go-micro-foundry-archive\.git archive/feature/[a-z0-9-]+@[0-9a-f]{40}$
+```
 
 ## feature 归档
 
-feature squash 合入 `main` 后，必须归档 feature 分支：
+feature squash 合入 `main` 前，必须先把 feature 分支归档到专用归档仓库，再把归档 HEAD SHA 写入 squash commit 的 `Archive-Ref`：
 
 ```bash
-git push origin feature/<feature-name>:archive/feature/<feature-name>
+git remote add archive git@github.com:tiankongzhise/go-micro-foundry-archive.git
+git push archive feature/<feature-name>:archive/feature/<feature-name>
+git ls-remote --heads archive archive/feature/<feature-name>
 git push origin --delete feature/<feature-name>
 ```
 
 归档约束：
 
-- `archive/feature/<feature-name>` 只用于追溯历史。
+- `archive/feature/<feature-name>` 只用于追溯历史，必须位于专用归档仓库。
+- 主仓库 `git@github.com:tiankongzhise/go-micro-foundry.git` 不保留 `archive/feature/*` 分支。
 - 归档分支不可更改。
 - 禁止向归档分支继续提交。
 - 禁止 force push 归档分支。
 - 禁止 rebase、reset、cherry-pick 后覆盖归档分支。
 - 禁止把归档分支作为新开发基线。
 - 如需修复问题，必须从当前 `main` 新建新的 `feature/*` 分支。
-- 仓库管理员应在 GitHub 上为 `archive/feature/*` 配置保护规则，禁止删除和直接推送。
+- 归档仓库管理员应在 GitHub 上为 `archive/feature/*` 配置保护规则，禁止删除和直接推送。
 
 可选为归档点打 tag：
 
 ```bash
-git tag archive/<feature-name>/merged-YYYYMMDD archive/feature/<feature-name>
-git push origin archive/<feature-name>/merged-YYYYMMDD
+git tag archive/<feature-name>/merged-YYYYMMDD feature/<feature-name>
+git push archive archive/<feature-name>/merged-YYYYMMDD
 ```
 
 ## commit 约束
@@ -156,7 +170,7 @@ git switch feature/<feature-name>
 git merge --no-ff origin/main
 ```
 
-同步 `main` 时必须保留 merge 记录，方便归档分支还原集成过程。
+同步 `main` 时必须保留 merge 记录，方便归档仓库中的归档分支还原集成过程。
 
 ## GitHub 保护规则
 
@@ -167,7 +181,7 @@ git merge --no-ff origin/main
 - 禁止直接 push 到 `main`。
 - 有 CI 后启用必需状态检查。
 
-`archive/feature/*` 必须启用保护规则：
+专用归档仓库的 `archive/feature/*` 必须启用保护规则：
 
 - 禁止 force push。
 - 禁止删除。
@@ -185,9 +199,9 @@ git merge --no-ff origin/main
 - 为 `main` 启用 Require approvals，并要求至少 1 次 review。
 - 禁止直接 push 到 `main`。
 - CI 建立后，为 `main` 启用 Require status checks to pass before merging。
-- 为 `archive/feature/*` 配置 branch protection rule。
-- 为 `archive/feature/*` 禁止 force push。
-- 为 `archive/feature/*` 禁止删除分支。
-- 为 `archive/feature/*` 禁止直接 push，归档分支只读。
+- 在专用归档仓库为 `archive/feature/*` 配置 branch protection rule。
+- 在专用归档仓库为 `archive/feature/*` 禁止 force push。
+- 在专用归档仓库为 `archive/feature/*` 禁止删除分支。
+- 在专用归档仓库为 `archive/feature/*` 禁止直接 push，归档分支只读。
 
 完成以上配置后，应在后续管理提交中更新本文，记录配置完成时间和执行人。
