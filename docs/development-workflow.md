@@ -175,3 +175,19 @@ git merge --no-ff origin/main
 - 仅仓库管理员可调整保护规则。
 
 如果当前 GitHub 权限或规则能力不足，必须至少在仓库管理记录中登记待办，并在具备权限后补齐保护规则。
+
+## 仓库管理待办
+
+当前基线文档已经写入 `main`。仓库管理员需要在 GitHub 仓库设置中补齐以下保护规则：
+
+- 为 `main` 配置 branch protection rule。
+- 为 `main` 启用 Require a pull request before merging。
+- 为 `main` 启用 Require approvals，并要求至少 1 次 review。
+- 禁止直接 push 到 `main`。
+- CI 建立后，为 `main` 启用 Require status checks to pass before merging。
+- 为 `archive/feature/*` 配置 branch protection rule。
+- 为 `archive/feature/*` 禁止 force push。
+- 为 `archive/feature/*` 禁止删除分支。
+- 为 `archive/feature/*` 禁止直接 push，归档分支只读。
+
+完成以上配置后，应在后续管理提交中更新本文，记录配置完成时间和执行人。
