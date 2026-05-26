@@ -49,10 +49,19 @@ Archive-Ref: git@github.com:tiankongzhise/go-micro-foundry-archive.git archive/f
 Archive-Ref: git@github.com:tiankongzhise/go-micro-foundry-archive.git archive/fix/archive-repository-workflow@f1cc649cfbf5c90cd380f2787419f397c47e12e6
 ```
 
-## 待归档记录
-
 ### 微服务开发阶段规划
 
 - 开发分支：`feature/microservice-development-planning`
-- 预期归档分支：`archive/feature/microservice-development-planning`
-- 当前状态：预开发规划中，待文档验收通过后按归档流程生成归档 HEAD 和 `Archive-Ref`。
+- 归档分支：`archive/feature/microservice-development-planning`
+- 归档 HEAD：`a6c8f07fc969d814ce0eca6eb3bf9ca6fd3f41ec`
+- 归档过程：从 `feature/microservice-development-planning` 迁出临时归档分支，推送到专用归档仓库后，通过 `git ls-remote --heads archive archive/feature/microservice-development-planning` 确认归档 HEAD。
+- 说明：归档完成后回到开发分支更新本文，并在归档记录 commit 中写入归档字段。
+- 归档字段：
+
+```text
+Archive-Ref: git@github.com:tiankongzhise/go-micro-foundry-archive.git archive/feature/microservice-development-planning@a6c8f07fc969d814ce0eca6eb3bf9ca6fd3f41ec
+```
+
+## 待归档记录
+
+当前无。
