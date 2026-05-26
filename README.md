@@ -39,16 +39,20 @@
 ## 开发流程
 
 完整开发约束见 [docs/development-workflow.md](docs/development-workflow.md)。
+微服务阶段拆分和联调口径见 [docs/microservice-development-plan.md](docs/microservice-development-plan.md)。
+开发分支与归档分支的对应关系见 [docs/archive-map.md](docs/archive-map.md)。
 历史设计与开发文档已归档到 `git@github.com:tiankongzhise/go-micro-foundry-archive.git` 的 `archive/feature/origin-docs` 分支。
 
 核心规则：
 
 - 禁止直接在 `main` 上开发或直接推送。
 - 每个功能从 `main` 新建 `feature/<feature-name>`。
+- 涉及微服务实现、接口、配置、UI、部署或联调的开发，必须先完整阅读归档的 `origin_docs` 设计文档。
+- 涉及多个微服务的 feature 必须先完成预开发规划，统一阶段目标、服务边界和联调验收口径。
 - 涉及多个微服务时，从 feature 分支创建服务子分支。
 - 服务子分支开发完成后必须用 merge 合并回对应 feature 分支，保留子分支开发记录。
 - feature 完成后 squash 合入 `main`。
-- 合入后的 feature 分支归档到专用归档仓库的 `archive/feature/<feature-name>`，主仓库不保留归档分支。
+- 联调通过后，先迁出临时归档分支并推送到专用归档仓库，再回到 feature 更新归档映射文档。
 - squash commit 必须在 trailer 区域记录 `Archive-Ref`，指向归档仓库、归档分支和归档 HEAD SHA。
 - 每实现一个功能点提交一次中文 commit，说明变化、技术细节、影响范围和验证方式。
 
