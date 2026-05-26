@@ -18,7 +18,7 @@
 - 不实现具体业务接口。
 - 不引入数据库或迁移工具。
 - 不提交真实 `config.toml`、`.env` 或密钥。
-- 不把历史设计文档分支全量合入当前 feature；历史文档已归档到 `archive/feature/origin-docs`。
+- 不把历史设计文档分支全量合入当前 feature；历史文档已归档到 `git@github.com:tiankongzhise/go-micro-foundry-archive.git` 的 `archive/feature/origin-docs` 分支。
 
 ## 验证
 
